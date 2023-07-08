@@ -186,29 +186,36 @@ const generateMessages = (chatHistory) => {
 
 
 async function listChatHistoryFiles(chatHistoryFolderPath) {
-
     try {
- 
-        const files = await readdir(chatHistoryFolderPath);
-        if(files.length === 0){
-            console.log('No chat history files exist.');
-            const chatHistoryFilePath = createNewChatHistoryFile(chatHistoryFolderPath);
-            return chatHistoryFilePath;
+        while (true) {
+            const files = await readdir(chatHistoryFolderPath);
+            if (files.length === 0) {
+                console.log('No chat history files exist.');
+                const chatHistoryFilePath = createNewChatHistoryFile(chatHistoryFolderPath);
+                return chatHistoryFilePath;
+            }
+
+            // List the chat history files to the user
+            console.log('Available chat history files:');
+            files.forEach((file, index) => {
+                console.log(`${index + 1}. ${file}`);
+            });
+
+            // Prompt the user to select a chat history file
+            const selectedFileIndex = readlineSync.questionInt('Select a chat history file (enter the corresponding number): ') - 1;
+
+            if (selectedFileIndex < 0 || selectedFileIndex >= files.length) {
+                console.log("Error: That file does not exist, please try again.");
+                continue;
+            }
+
+            return `${chatHistoryFolderPath}/${files[selectedFileIndex]}`;
         }
-
-        // List the chat history files to the user
-        console.log('Available chat history files:');
-        files.forEach((file, index) => {
-            console.log(`${index + 1}. ${file}`);
-        });
-
-        // Prompt the user to select a chat history file
-        const selectedFileIndex = readlineSync.questionInt('Select a chat history file (enter the corresponding number): ') - 1;
-        return `${chatHistoryFolderPath}/${files[selectedFileIndex]}`;
     } catch (error) {
         console.error('Error reading chat history:', error);
     }
 }
+
 
 async function writeChatHistoryToFile(filePath, chatHistory) {
     console.log('file path: ' + filePath)
