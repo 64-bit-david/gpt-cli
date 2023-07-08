@@ -14,55 +14,32 @@ async function main() {
 
     let chatHistoryFilePath = null;
 
-
-
     await handleSelectPreviousHistory(chatHistoryFilePath, chatHistoryFolderPath);
-    
-   
+       
     const chatHistory = await constructChatHistory(chatHistoryFilePath);
-
-    
 
 
     // Construct messages by iterating over the history
-    const messages = [
-        { role: "system", content: "You are a helpful assistant." },
-        ...chatHistory.map(({ role, content }) => ({ role, content }))
-    ];
-
+    const messages = generateMessages(chatHistory);
     while (true) {
         console.log('');
-        const input = readlineSync.question("Query: ");
+        const input = getUserInput();
         console.log('');
 
         try {
-            // Add user input
-            messages.push({ role: 'user', content: input });
-
-            const assistant = await openai.createChatCompletion({
-                model: 'gpt-3.5-turbo',
-                messages
-            });
-
-            if (input.toLowerCase() === 'exit' || input.toLowerCase() === 'stop' || input.toLowerCase() === 'end') {
+            if (shouldExit(input)) {
                 console.log(colors.yellow('🤖: Goodbye.'));
-                // Write chat history back to file before exiting
                 await writeChatHistoryToFile(chatHistoryFilePath, chatHistory);
                 return;
             }
 
-            const assistantResponse = assistant.data.choices[0].message.content;
+            const assistantResponse = await getAssistantResponse(input, messages);
 
             console.log('');
             console.log('🤖: ' + assistantResponse);
             console.log('');
 
-            // Add assistant response to chat history
-            messages.push({ role: 'assistant', content: assistantResponse });
-            chatHistory.push({ role: 'user', content: input });
-            chatHistory.push({ role: 'assistant', content: assistantResponse });
-
-            console.log(chatHistory);
+            updateChatHistory(chatHistory, input, assistantResponse, messages);
 
             // Write updated chat history to file
             await writeChatHistoryToFile(chatHistoryFilePath, chatHistory);
@@ -71,6 +48,39 @@ async function main() {
         }
     }
 }
+
+
+
+const getUserInput = () => {
+    return readlineSync.question("Query: ");
+}
+
+const shouldExit = (input) => {
+    return input.toLowerCase() === 'exit' || input.toLowerCase() === 'stop' || input.toLowerCase() === 'end';
+
+}
+
+
+const getAssistantResponse = async(input, messages) => {
+    // Add user input
+    messages.push({ role: 'user', content: input });
+
+    const assistant = await openai.createChatCompletion({
+        model: 'gpt-3.5-turbo',
+        messages
+    });
+
+    return assistant.data.choices[0].message.content;
+}
+
+function updateChatHistory(chatHistory, userInput, assistantResponse, messages) {
+    messages.push({ role: 'user', content: userInput });
+    messages.push({ role: 'assistant', content: assistantResponse });
+    chatHistory.push({ role: 'user', content: userInput });
+    chatHistory.push({ role: 'assistant', content: assistantResponse });
+}
+
+
 
 
 const welcomeMessage = () => {
@@ -119,6 +129,7 @@ const handleSelectPreviousHistory = async (chatHistoryFilePath, chatHistoryFolde
     }
 }
 
+
 async function createNewChatHistoryFile(chatHistoryFolderPath) {
     try {
         // Create a new chat history file
@@ -148,6 +159,15 @@ const constructChatHistory = async(chatHistoryFilePath) => {
     return chatHistory;
 
 
+}
+
+
+const generateMessages = (chatHistory) => {
+    const messages = [
+        { role: "system", content: "You are a helpful assistant." },
+        ...chatHistory.map(({ role, content }) => ({ role, content }))
+    ];
+    return messages;
 }
 
 
