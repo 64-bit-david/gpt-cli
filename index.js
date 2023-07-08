@@ -14,7 +14,8 @@ async function main() {
 
     let chatHistoryFilePath = null;
 
-    await handleSelectPreviousHistory(chatHistoryFilePath, chatHistoryFolderPath);
+    chatHistoryFilePath = await handleSelectPreviousHistory(chatHistoryFolderPath);
+
        
     const chatHistory = await constructChatHistory(chatHistoryFilePath);
 
@@ -32,6 +33,15 @@ async function main() {
                 await writeChatHistoryToFile(chatHistoryFilePath, chatHistory);
                 return;
             }
+
+            console.log("CHAT HISTORY")
+            console.log('-----------------');
+            console.log(chatHistory)
+
+            console.log("MESSAGES")
+            console.log('-----------------');
+            console.log(messages)
+
 
             const assistantResponse = await getAssistantResponse(input, messages);
 
@@ -113,29 +123,33 @@ const createChatHistoryFolder = async (chatHistoryFolderPath) => {
     }
 }
 
-const handleSelectPreviousHistory = async (chatHistoryFilePath, chatHistoryFolderPath) => {
+async function handleSelectPreviousHistory(chatHistoryFolderPath) {
+    let chatHistoryFilePath = null;
+
     while (true) {
         console.log('');
-        const input = readlineSync.question("Select previous chat history? (Y/N): " );
-    
+        const input = readlineSync.question("Select previous chat history? (Y/N): ");
+
         if (input.toLowerCase() === 'y' || input.toLowerCase() === 'yes') {
             chatHistoryFilePath = await listChatHistoryFiles(chatHistoryFolderPath);
             console.log(chatHistoryFilePath);
             break;
         } else if (input.toLowerCase() === 'n' || input.toLowerCase() === 'no') {
-            await createNewChatHistoryFile(chatHistoryFolderPath);
+            chatHistoryFilePath = await createNewChatHistoryFile(chatHistoryFolderPath, chatHistoryFilePath);
             break;
         }
     }
+
+    return chatHistoryFilePath;
 }
 
 
-async function createNewChatHistoryFile(chatHistoryFolderPath) {
+async function createNewChatHistoryFile(chatHistoryFolderPath, chatHistoryFilePath) {
     try {
         // Create a new chat history file
         const files = await readdir(chatHistoryFolderPath);
         const newFileName = `chatHistory${files.length + 1}.json`;
-        const chatHistoryFilePath = `${chatHistoryFolderPath}/${newFileName}`;
+        chatHistoryFilePath = `${chatHistoryFolderPath}/${newFileName}`;
         await fs.writeFile(chatHistoryFilePath, '[]', 'utf8');
         console.log(`Created new chat history file: ${newFileName}`);
         return chatHistoryFilePath;
@@ -147,7 +161,7 @@ async function createNewChatHistoryFile(chatHistoryFolderPath) {
 
 const constructChatHistory = async(chatHistoryFilePath) => {
 
-    const chatHistory = [];
+    let chatHistory = [];
 
     if (chatHistoryFilePath) {
         const fileContent = await fs.readFile(chatHistoryFilePath, 'utf8');
@@ -197,6 +211,7 @@ async function listChatHistoryFiles(chatHistoryFolderPath) {
 }
 
 async function writeChatHistoryToFile(filePath, chatHistory) {
+    console.log('file path: ' + filePath)
     if (filePath) {
         try{
             await fs.writeFile(filePath, JSON.stringify(chatHistory), 'utf8');
