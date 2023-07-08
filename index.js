@@ -4,56 +4,24 @@ import colors from 'colors';
 import fs, { readdir } from 'fs/promises';
 
 async function main() {
-    const asciiArt = `     /$$$$$$  /$$$$$$$  /$$$$$$$$        /$$$$$$  /$$       /$$$$$$
-    /$$__  $$| $$__  $$|__  $$__/       /$$__  $$| $$      |_  $$_/
-   | $$  \\__/| $$  \\ $$   | $$         | $$  \\__/| $$        | $$  
-   | $$ /$$$$| $$$$$$$/   | $$         | $$      | $$        | $$  
-   | $$|_  $$| $$____/    | $$         | $$      | $$        | $$  
-   | $$  \\ $$| $$         | $$         | $$    $$| $$        | $$  
-   |  $$$$$$/| $$         | $$         |  $$$$$$/| $$$$$$$$ /$$$$$$
-    \\______/ |__/         |__/          \\______/ |________/|______/`;
+    
 
-    console.log(colors.bold.green(asciiArt));
-    console.log(colors.bold.blue('#####################################################################'));
-    console.log('');
-    console.log('🤖: ' + "Welcome to the GPT-CLI, an application to interact with chat-gpt.");
-    console.log('🤖: ' + "Enter 'stop' to exit.");
-
-
+    welcomeMessage();
 
     //check if a chatHistory folder exists, if not then create it
-    const chatHistoryPath = './chatHistory';
-    const folderExists = await fs.access(chatHistoryPath).then(() => true).catch(() => false);
-
-    if (!folderExists) {
-        await fs.mkdir(chatHistoryPath);
-        console.log("Created chat history folder");
-    }
+    const chatHistoryFolderPath = './chatHistory';
+    await createChatHistoryFolder(chatHistoryFolderPath);
 
     let chatHistoryFilePath = null;
 
-    while (true) {
-        console.log('');
-        const input = readlineSync.question("Select previous chat history? (Y/N)" );
-    
-        if (input.toLowerCase() === 'y' || input.toLowerCase() === 'yes') {
-            chatHistoryFilePath = await listChatHistoryFiles(chatHistoryPath);
-            console.log(chatHistoryFilePath);
-            break;
-        } else if (input.toLowerCase() === 'n' || input.toLowerCase() === 'no') {
-            createNewChatHistoryFile(chatHistoryPath);
-            break;
-        }
-    }
+
+
+    await handleSelectPreviousHistory(chatHistoryFilePath, chatHistoryFolderPath);
     
    
+    const chatHistory = await constructChatHistory(chatHistoryFilePath);
 
-    let chatHistory = [];
-
-    if (chatHistoryFilePath) {
-        const fileContent = await fs.readFile(chatHistoryFilePath, 'utf8');
-        chatHistory = JSON.parse(fileContent);
-    }
+    
 
 
     // Construct messages by iterating over the history
@@ -94,6 +62,8 @@ async function main() {
             chatHistory.push({ role: 'user', content: input });
             chatHistory.push({ role: 'assistant', content: assistantResponse });
 
+            console.log(chatHistory);
+
             // Write updated chat history to file
             await writeChatHistoryToFile(chatHistoryFilePath, chatHistory);
         } catch (err) {
@@ -102,29 +72,93 @@ async function main() {
     }
 }
 
-async function createNewChatHistoryFile(chatHistoryPath) {
+
+const welcomeMessage = () => {
+    const asciiArt = `     /$$$$$$  /$$$$$$$  /$$$$$$$$        /$$$$$$  /$$       /$$$$$$
+    /$$__  $$| $$__  $$|__  $$__/       /$$__  $$| $$      |_  $$_/
+   | $$  \\__/| $$  \\ $$   | $$         | $$  \\__/| $$        | $$  
+   | $$ /$$$$| $$$$$$$/   | $$         | $$      | $$        | $$  
+   | $$|_  $$| $$____/    | $$         | $$      | $$        | $$  
+   | $$  \\ $$| $$         | $$         | $$    $$| $$        | $$  
+   |  $$$$$$/| $$         | $$         |  $$$$$$/| $$$$$$$$ /$$$$$$
+    \\______/ |__/         |__/          \\______/ |________/|______/`;
+
+    console.log(colors.bold.green(asciiArt));
+    console.log(colors.bold.blue('#####################################################################'));
+    console.log('');
+    console.log('🤖: ' + "Welcome to the GPT-CLI, an application to interact with chat-gpt.");
+    console.log('🤖: ' + "Enter 'stop' to exit.");
+}
+
+const createChatHistoryFolder = async (chatHistoryFolderPath) => {
     try {
-        // Create a new chat history file
-        const files = await readdir(chatHistoryPath);
-        const newFileName = `chatHistory${files.length + 1}.json`;
-        const chatHistoryFilePath = `${chatHistoryPath}/${newFileName}`;
-        await fs.writeFile(chatHistoryFilePath, '[]', 'utf8');
-        console.log(`Created new chat history file: ${newFileName}`);
-        return chatHistoryFilePath;
+        const folderExists = await fs.access(chatHistoryFolderPath).then(() => true).catch(() => false);
+
+        if (!folderExists) {
+            await fs.mkdir(chatHistoryFolderPath);
+            console.log("Created chat history folder");
+        }
     } catch (err) {
         console.log(err);
     }
 }
 
+const handleSelectPreviousHistory = async (chatHistoryFilePath, chatHistoryFolderPath) => {
+    while (true) {
+        console.log('');
+        const input = readlineSync.question("Select previous chat history? (Y/N): " );
+    
+        if (input.toLowerCase() === 'y' || input.toLowerCase() === 'yes') {
+            chatHistoryFilePath = await listChatHistoryFiles(chatHistoryFolderPath);
+            console.log(chatHistoryFilePath);
+            break;
+        } else if (input.toLowerCase() === 'n' || input.toLowerCase() === 'no') {
+            await createNewChatHistoryFile(chatHistoryFolderPath);
+            break;
+        }
+    }
+}
 
-async function listChatHistoryFiles(chatHistoryPath) {
+async function createNewChatHistoryFile(chatHistoryFolderPath) {
+    try {
+        // Create a new chat history file
+        const files = await readdir(chatHistoryFolderPath);
+        const newFileName = `chatHistory${files.length + 1}.json`;
+        const chatHistoryFilePath = `${chatHistoryFolderPath}/${newFileName}`;
+        await fs.writeFile(chatHistoryFilePath, '[]', 'utf8');
+        console.log(`Created new chat history file: ${newFileName}`);
+        return chatHistoryFilePath;
+    } catch (err) {
+        console.log(err);
+        console.log('err here')
+    }
+}
+
+const constructChatHistory = async(chatHistoryFilePath) => {
+
+    const chatHistory = [];
+
+    if (chatHistoryFilePath) {
+        const fileContent = await fs.readFile(chatHistoryFilePath, 'utf8');
+        chatHistory = JSON.parse(fileContent);
+    }
+
+    console.log(chatHistory)
+
+    return chatHistory;
+
+
+}
+
+
+async function listChatHistoryFiles(chatHistoryFolderPath) {
 
     try {
  
-        const files = await readdir(chatHistoryPath);
+        const files = await readdir(chatHistoryFolderPath);
         if(files.length === 0){
             console.log('No chat history files exist.');
-            const chatHistoryFilePath = createNewChatHistoryFile(chatHistoryPath);
+            const chatHistoryFilePath = createNewChatHistoryFile(chatHistoryFolderPath);
             return chatHistoryFilePath;
         }
 
@@ -136,7 +170,7 @@ async function listChatHistoryFiles(chatHistoryPath) {
 
         // Prompt the user to select a chat history file
         const selectedFileIndex = readlineSync.questionInt('Select a chat history file (enter the corresponding number): ') - 1;
-        return `${chatHistoryPath}/${files[selectedFileIndex]}`;
+        return `${chatHistoryFolderPath}/${files[selectedFileIndex]}`;
     } catch (error) {
         console.error('Error reading chat history:', error);
     }
