@@ -1,5 +1,9 @@
-import { Configuration, OpenAIApi } from "openai";
-import dotenv from 'dotenv';
+const { Configuration, OpenAIApi } = require("openai");
+const dotenv = require('dotenv');
+
+
+
+
 dotenv.config();
 
 const config = new Configuration({
@@ -8,4 +12,5 @@ const config = new Configuration({
 
 const openai = new OpenAIApi(config);
 
-export default openai;
+
+module.exports = openai;
