@@ -6,18 +6,19 @@ const colors = require('colors');
 
 
 
-
+//Function to get user input
 const getUserInput = () => {
     return readlineSync.question("Query: ");
 }
 
+//Function to check if user want's to exit
 const shouldExit = (input) => {
     return input.toLowerCase() === 'exit' || input.toLowerCase() === 'stop' || input.toLowerCase() === 'end';
 
 }
 
 
-
+//Function to gte assistant response from openai
 const getAssistantResponse = async(input, messages) => {
     // Add user input
     messages.push({ role: 'user', content: input });
@@ -30,6 +31,7 @@ const getAssistantResponse = async(input, messages) => {
     return assistant.data.choices[0].message.content;
 }
 
+// Function to update chatHistory
 function updateChatHistory(chatHistory, userInput, assistantResponse, messages) {
     messages.push({ role: 'user', content: userInput });
     messages.push({ role: 'assistant', content: assistantResponse });
@@ -39,7 +41,7 @@ function updateChatHistory(chatHistory, userInput, assistantResponse, messages) 
 
 
 
-
+//Display a welcome message
 const welcomeMessage = () => {
     const asciiArt = `     /$$$$$$  /$$$$$$$  /$$$$$$$$        /$$$$$$  /$$       /$$$$$$
     /$$__  $$| $$__  $$|__  $$__/       /$$__  $$| $$      |_  $$_/
@@ -57,6 +59,8 @@ const welcomeMessage = () => {
     console.log('🤖: ' + "Enter 'stop' to exit.");
 }
 
+
+//Create a folder in the local directory for holdiing previous chat history files
 const createChatHistoryFolder = async (chatHistoryFolderPath) => {
     try {
         const folderExists = await fs.access(chatHistoryFolderPath).then(() => true).catch(() => false);
@@ -70,6 +74,8 @@ const createChatHistoryFolder = async (chatHistoryFolderPath) => {
     }
 }
 
+
+// Allow user to select a previous chat history or create a new one
 async function handleSelectPreviousHistory(chatHistoryFolderPath) {
     let chatHistoryFilePath = null;
 
@@ -91,6 +97,7 @@ async function handleSelectPreviousHistory(chatHistoryFolderPath) {
 }
 
 
+//Creates new chat history file
 async function createNewChatHistoryFile(chatHistoryFolderPath, chatHistoryFilePath) {
     try {
         // Create a new chat history file
@@ -105,6 +112,7 @@ async function createNewChatHistoryFile(chatHistoryFolderPath, chatHistoryFilePa
     }
 }
 
+//construct the chathistory file
 const constructChatHistory = async(chatHistoryFilePath) => {
 
     let chatHistory = [];
@@ -114,14 +122,13 @@ const constructChatHistory = async(chatHistoryFilePath) => {
         chatHistory = JSON.parse(fileContent);
     }
 
-    console.log(chatHistory)
 
     return chatHistory;
 
 
 }
 
-
+//build up the messages from the chathistory file
 const generateMessages = (chatHistory) => {
     const messages = [
         { role: "system", content: "You are a helpful assistant." },
@@ -131,6 +138,7 @@ const generateMessages = (chatHistory) => {
 }
 
 
+//list files in the chathistory folder
 async function listChatHistoryFiles(chatHistoryFolderPath) {
     try {
         while (true) {
@@ -162,9 +170,8 @@ async function listChatHistoryFiles(chatHistoryFolderPath) {
     }
 }
 
-
+//update the chat history file
 async function writeChatHistoryToFile(filePath, chatHistory) {
-    console.log('file path: ' + filePath)
     if (filePath) {
         try{
             await fs.writeFile(filePath, JSON.stringify(chatHistory), 'utf8');

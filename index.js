@@ -47,13 +47,13 @@ async function main() {
                 return;
             }
 
-            console.log("CHAT HISTORY")
-            console.log('-----------------');
-            console.log(chatHistory)
+            // console.log("CHAT HISTORY")
+            // console.log('-----------------');
+            // console.log(chatHistory)
 
-            console.log("MESSAGES")
-            console.log('-----------------');
-            console.log(messages)
+            // console.log("MESSAGES")
+            // console.log('-----------------');
+            // console.log(messages)
 
 
             const assistantResponse = await getAssistantResponse(input, messages);

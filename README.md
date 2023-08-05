@@ -12,7 +12,9 @@ A simple cli app for interacting with the chat-gpt client.
 This will require a openai api key stored in a GPT_API_KEY environment variable.
 Then open the directory location and enter "go" to execute the bat file to start the application.
 
-Useful tip: I use this often in windows terminal, to ensure it is ready to go each time I open terminal I have this in the settings.json file
+After adding the env, enter go in the cli to start the program.
+
+Useful tip: I use this often in windows terminal, to ensure it is ready to go each time I open terminal I have this in the windows terminal settings.json file
 
     "startupActions": "new-tab -p \"Command Prompt\" --title \"Desktop\" -d \"C:\\Users\\david\\Desktop\" ; new-tab -p \"Command Prompt\" --title \"Assistant 🤖\" -d \"C:\\Users\\david\\Desktop\\Coding\\projects\\gpt_cli\" --tabColor #00CED1 ",
 
